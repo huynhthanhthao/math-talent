@@ -1,5 +1,0 @@
-export const ACCOUNT_STATUS = {
-  INACTIVE: "INACTIVE",
-  ACTIVE: "ACTIVE",
-  BLOCKED: "BLOCKED",
-};

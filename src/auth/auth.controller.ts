@@ -15,7 +15,6 @@ import { AuthService } from "./auth.service";
 import { LoginDto, RegisterDto } from "./dto/auth.dto";
 import { AuthGuard } from "@nestjs/passport";
 import { AnyObject } from "interfaces/common.interface";
-import { CustomHttpException } from "utils/ApiErrors";
 
 @Controller("auth")
 export class AuthController {

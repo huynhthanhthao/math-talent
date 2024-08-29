@@ -6,3 +6,298 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id                   String          @id @default(uuid())
+  status               USER_STATUS     @default(ACTIVE)
+  username             String          @unique
+  password             String
+  deleted              DateTime?
+  name                 String
+  phone                String
+  email                String?
+  avatarURL            String?
+  birthDay             DateTime?
+  gender               GENDER?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  userRounds           UserRound[]
+  userExams            UserExam[]
+  createRounds         Round[]         @relation("creator")
+  updateRounds         Round[]         @relation("updater")
+  createGroupQuestions GroupQuestion[] @relation("creator")
+  updateGroupQuestions GroupQuestion[] @relation("updater")
+  createQuestions      Question[]      @relation("creator")
+  updateQuestions      Question[]      @relation("updater")
+  createAnswers        Answer[]        @relation("creator")
+  updateAnswers        Answer[]        @relation("updater")
+  createSubQuestions   SubQuestion[]   @relation("creator")
+  updateSubQuestions   SubQuestion[]   @relation("updater")
+  createSubAnswers     SubAnswer[]     @relation("creator")
+  updateSubAnswers     SubAnswer[]     @relation("updater")
+  createRooms          Room[]          @relation("creator")
+  updateRooms          Room[]          @relation("updater")
+  createExams          Exam[]          @relation("creator")
+  updateExams          Exam[]          @relation("updater")
+  createMatches        Match[]         @relation("creator")
+  matchAnswers         MatchAnswer[]
+  roles                Role[]
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @db.Text
+  permissions Permission[]
+  users       User[]
+}
+
+model Permission {
+  id     String @unique
+  name   String @db.Text
+  roleId String
+  role   Role?  @relation(fields: [roleId], references: [id])
+}
+
+model City {
+  id   String @unique
+  name String @db.Text
+}
+
+model District {
+  id      String   @unique
+  name    String   @db.Text
+  schools School[]
+}
+
+model School {
+  id         String      @unique
+  name       String      @db.Text
+  type       SCHOOL_TYPE
+  districtId String
+  district   District?   @relation(fields: [districtId], references: [id])
+}
+
+model Grade {
+  id             String          @unique
+  name           String          @db.Text
+  rounds         Round[]
+  groupQuestions GroupQuestion[]
+}
+
+model Round {
+  id          String       @id @default(uuid())
+  name        String       @db.Text
+  gradeId     String
+  grade       Grade?       @relation(fields: [gradeId], references: [id])
+  code        String
+  maxAttempts Int
+  password    String?
+  level       ROUND_LEVEL?
+  type        ROUND_TYPE
+  startTime   DateTime
+  endTime     DateTime
+  createdBy   String
+  updatedBy   String?
+  creator     User?        @relation("creator", fields: [createdBy], references: [id])
+  updater     User?        @relation("updater", fields: [updatedBy], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userRounds  UserRound[]
+  exams       Exam[]
+}
+
+model UserRound {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User?      @relation(fields: [userId], references: [id])
+  roundId   String
+  round     Round?     @relation(fields: [roundId], references: [id])
+  startTime DateTime   @default(now())
+  endTime   DateTime
+  userExams UserExam[]
+}
+
+model Exam {
+  id        String     @id @default(uuid())
+  roundId   String
+  score     Float
+  round     Round?     @relation(fields: [roundId], references: [id])
+  userExams UserExam[]
+  questions Question[]
+  createdBy String
+  updatedBy String?
+  creator   User?      @relation("creator", fields: [createdBy], references: [id])
+  updater   User?      @relation("updater", fields: [updatedBy], references: [id])
+}
+
+model UserExam {
+  id          String       @id @default(uuid())
+  userRoundId String
+  examId      String
+  userId      String
+  isPassed    Boolean      @default(false)
+  score       Float?
+  startTime   DateTime?
+  endTime     DateTime?
+  user        User         @relation(fields: [userId], references: [id])
+  userRound   UserRound?   @relation(fields: [userRoundId], references: [id])
+  exam        Exam         @relation(fields: [examId], references: [id])
+  userAnswers UserAnswer[]
+}
+
+model UserAnswer {
+  id         String   @id @default(uuid())
+  userExamId String
+  question   Json
+  answer     Json?
+  isCorrect  Boolean
+  userExam   UserExam @relation(fields: [userExamId], references: [id])
+}
+
+model GroupQuestion {
+  id          String      @id @default(uuid())
+  gradeId     String
+  grade       Grade       @relation(fields: [gradeId], references: [id])
+  level       ROUND_LEVEL
+  name        String      @db.Text
+  description String?     @db.Text
+  isShared    Boolean     @default(false)
+  createdBy   String
+  updatedBy   String?
+  creator     User?       @relation("creator", fields: [createdBy], references: [id])
+  updater     User?       @relation("updater", fields: [updatedBy], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  questions   Question[]
+  matches     Match[]
+}
+
+model Question {
+  id              String         @id @default(uuid())
+  examId          String?
+  groupQuestionId String?
+  content         String         @db.Text
+  type            QUESTION_TYPE
+  exam            Exam?          @relation(fields: [examId], references: [id])
+  groupQuestion   GroupQuestion? @relation(fields: [groupQuestionId], references: [id])
+  createdBy       String
+  updatedBy       String?
+  creator         User?          @relation("creator", fields: [createdBy], references: [id])
+  updater         User?          @relation("updater", fields: [updatedBy], references: [id])
+  answers         Answer[]
+  subQuestions    SubQuestion[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Answer {
+  id         String    @id @default(uuid())
+  questionId String
+  question   Question? @relation(fields: [questionId], references: [id])
+  content    String?   @db.Text
+  createdBy  String
+  updatedBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  creator    User?     @relation("creator", fields: [createdBy], references: [id])
+  updater    User?     @relation("updater", fields: [updatedBy], references: [id])
+}
+
+model SubQuestion {
+  id         String     @id @default(uuid())
+  questionId String
+  question   Question?  @relation(fields: [questionId], references: [id])
+  content    String     @db.Text
+  createdBy  String
+  updatedBy  String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  creator    User?      @relation("creator", fields: [createdBy], references: [id])
+  updater    User?      @relation("updater", fields: [updatedBy], references: [id])
+  subAnswer  SubAnswer?
+}
+
+model SubAnswer {
+  id            String      @id @default(uuid())
+  subQuestionId String      @unique
+  subQuestion   SubQuestion @relation(fields: [subQuestionId], references: [id])
+  content       String      @db.Text
+  createdBy     String
+  updatedBy     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  creator       User?       @relation("creator", fields: [createdBy], references: [id])
+  updater       User?       @relation("updater", fields: [updatedBy], references: [id])
+}
+
+model Room {
+  id        String   @id @default(uuid())
+  code      String
+  name      String   @db.Text
+  quantity  Int      @default(8)
+  password  String?
+  createdBy String
+  updatedBy String?
+  creator   User?    @relation("creator", fields: [createdBy], references: [id])
+  updater   User?    @relation("updater", fields: [updatedBy], references: [id])
+  createdAt DateTime
+}
+
+model Match {
+  id              String         @id @default(uuid())
+  groupQuestionId String
+  groupQuestion   GroupQuestion? @relation(fields: [groupQuestionId], references: [id])
+  totalTime       Float
+  createdBy       String
+  creator         User?          @relation("creator", fields: [createdBy], references: [id])
+  createdAt       DateTime
+  matchAnswers    MatchAnswer[]
+}
+
+model MatchAnswer {
+  id        String  @id @default(uuid())
+  matchId   String
+  match     Match?  @relation(fields: [matchId], references: [id])
+  userId    String
+  user      User?   @relation(fields: [userId], references: [id])
+  question  Json
+  answer    Json?
+  isCorrect Boolean
+}
+
+enum GENDER {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum USER_STATUS {
+  ACTIVE
+  BLOCKED
+}
+
+enum SCHOOL_TYPE {
+  PRIMARY
+  SECONDARY
+  HIGH_SCHOOL
+}
+
+enum ROUND_TYPE {
+  SCHOOL
+  DISTRICT
+  PROVINCE
+  NATIONAL
+  TRIAL
+}
+
+enum ROUND_LEVEL {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QUESTION_TYPE {
+  MULTIPLE_CHOICE
+  INPUT
+  MATCHING
+}
